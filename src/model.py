@@ -26,9 +26,6 @@ class Model:
     _strategy: Strategy = None
 
     _dataframe: pd.DataFrame = None
-
-    _forecastColumn: str = None
-    _forcastedPeriod: int = None
     _X: np.array = None
     _y: np.array = None
     _X_lately: np.array = None
@@ -36,7 +33,6 @@ class Model:
     _X_test: list = None
     _y_train: list = None
     _y_test: list = None
-    _confidence: float = None
 
     def __init__(self, pathToDataset: str, features: list, label: str, strategy: Strategy):
         self._features = features
@@ -46,16 +42,14 @@ class Model:
         self.setUp()
 
     def setUp(self):
-        df = self.createDataframe(self._path)
-        self.regressionModel(
-            *self.prepareTrainingSets(self.prepareDataframe(df)))
+        _df, _X_train, _X_test, _y_train, _y_test, _X_lately = self.prepareTrainingSets(
+            self.prepareDataframe(self.createDataframe(self._path)))
+
+        self.regressionModel(_df, _X_train, _X_test,
+                             _y_train, _y_test, _X_lately)
 
     def createDataframe(self, path: str) -> pd.DataFrame:
         return pd.read_csv(path, header=0, index_col='Date', parse_dates=True)
-        # with open(path, 'r') as file:
-        #     header = list(file.readline().split(','))
-        #     header = [x.replace(' ', '').rstrip() for x in header]
-        # return pd.read_csv(path, names=header, skiprows=1)
 
     def prepareDataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df[self._features]
@@ -73,26 +67,41 @@ class Model:
 
         return df
 
+    def scaleDataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        # Get column names first
+        names = df.columns
+        # Create the Scaler object
+        scaler = preprocessing.StandardScaler()
+        # Fit your data on the scaler object
+        scaled_df = scaler.fit_transform(df)
+        scaled_df = pd.DataFrame(scaled_df, columns=names)
+        return scaled_df
+
+    def scaleArray(self, array):
+        # Create the Scaler object
+        scaler = preprocessing.StandardScaler()
+        # Fit your data on the scaler object
+        scaled_array = scaler.fit_transform(array)
+        return scaled_array
+
     def prepareTrainingSets(self, df: pd.DataFrame):
-         # number of days in the future
+        # number of days in the future
         forcastedPeriod = int(math.ceil(0.01 * len(df)))
-
-        # X = np.array(df.drop(['label'], 1))
-        X = np.array(df)
-        # scale the data set
-        X = preprocessing.scale(X)
-        # select all rows from the dataframe from forcastedPeriod days ago
-        # since we have the date in descending order we will select the first forcastedPeriod entries
-        X_lately = X[-forcastedPeriod:]
-        # X_lately = X[:forcastedPeriod]
-
-        # select all rows from the dataframe from the past until forcastedPeriod days
-        X = X[:-forcastedPeriod]
-        # X = X[forcastedPeriod:]
-
         # to predict in the future
-        # this will create the column label and will append at the end ( we use ascending date) forcastedPeriod lines
+        # this will create the column label and will append at the end ( we use ascending date) <forcastedPeriod> lines
         df['label'] = df[self._label].shift(-forcastedPeriod)
+
+        X = np.array(df.drop(['label'], 1))
+        # df.to_csv('./adjustedDataset.csv')
+        # X = np.array(df)
+
+        # scale the data set
+        X = self.scaleArray(X)
+        # select all rows from the dataframe from <forcastedPeriod> days ago
+        # since we have the date in descending order we will select the first <forcastedPeriod> entries
+        X_lately = X[-forcastedPeriod:]
+        # select all rows from the dataframe from the past until <forcastedPeriod> days
+        X = X[:-forcastedPeriod]
 
         df.dropna(inplace=True)
         y = np.array(df['label'])
@@ -131,4 +140,4 @@ class Model:
 
 
 model = Model("./dataset/bitcoin_price_20170101_20191129_asc.csv",
-              ['Open',  'High',  'Low',  'Close', 'Volume', 'Market Cap'], "Close", Strategy.All)
+              ['Open',  'High',  'Low',  'Close', 'Volume', 'Market Cap'], 'Close', Strategy.All)
