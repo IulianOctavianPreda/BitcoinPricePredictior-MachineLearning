@@ -85,40 +85,31 @@ class Model:
         return scaled_array
 
     def prepareTrainingSets(self, df: pd.DataFrame):
-        # number of days in the future
-        forcastedPeriod = int(math.ceil(0.01 * len(df)))
-        # to predict in the future
-        # this will create the column label and will append at the end ( we use ascending date) <forcastedPeriod> lines
-        df['label'] = df[self._label].shift(-forcastedPeriod)
-
-        X = np.array(df.drop(['label'], 1))
         # df.to_csv('./adjustedDataset.csv')
-        # X = np.array(df)
-
+        X = np.array(df)
         # scale the data set
         X = self.scaleArray(X)
-        # select all rows from the dataframe from <forcastedPeriod> days ago
-        # since we have the date in descending order we will select the first <forcastedPeriod> entries
-        X_lately = X[-forcastedPeriod:]
-        # select all rows from the dataframe from the past until <forcastedPeriod> days
-        X = X[:-forcastedPeriod]
-
         df.dropna(inplace=True)
         y = np.array(df['label'])
-
         X_train, X_test, y_train, y_test = model_selection.train_test_split(
             X, y, test_size=0.2)
 
-        return df, X_train, X_test, y_train, y_test, X_lately
+        return df, X_train, X_test, y_train, y_test
 
-    def regressionModel(self, df, X_train, X_test, y_train, y_test, X_lately):
+    def trainModel(self, df, X_train, X_test, y_train, y_test):
+        self.trainModelStrategyDependant(df, X_train, X_test, y_train, y_test)
+
+    def regressionModel(self, df, X_train, X_test, y_train, y_test):
         clf = LinearRegression(n_jobs=-1)
         clf.fit(X_train, y_train)
         confidence = clf.score(X_test, y_test)
         print(confidence)
-        forecast_set = clf.predict(X_lately)
-        df['Forecast'] = np.nan
+        return clf
 
+    def forcast(self, model, forcastingDataframe):
+        forecast_set = model.predict(forcastingDataframe)
+
+        df['Forecast'] = np.nan
         last_date = df.iloc[-1].name
         # last_date = datetime.datetime(2019, 11, 28)
         # print(last_date)
@@ -141,3 +132,36 @@ class Model:
 
 model = Model("./dataset/bitcoin_price_20170101_20191129_asc.csv",
               ['Open',  'High',  'Low',  'Close', 'Volume', 'Market Cap'], 'Close', Strategy.All)
+
+#  this is just for testing purposes , what it will do, it will take the x most recent days  and it will "delete" the closing price
+# then it will save those "unanswered" entries in X_lately
+# after that it will make the training dataset without those days
+#  it will get trained and it will try to predict for those days
+#  basically you need all the data except the closing price to be able to get a closing price, in reality you can do that only for the current day with the current data available
+
+# def prepareTrainingSets(self, df: pd.DataFrame):
+#     # number of days in the future
+#     forcastedPeriod = int(math.ceil(0.01 * len(df)))
+#     # to predict in the future
+#     # this will create the column label and will append at the end ( we use ascending date) <forcastedPeriod> lines
+#     df['label'] = df[self._label].shift(-forcastedPeriod)
+
+#     X = np.array(df.drop(['label'], 1))
+#     # df.to_csv('./adjustedDataset.csv')
+#     # X = np.array(df)
+
+#     # scale the data set
+#     X = self.scaleArray(X)
+#     # select all rows from the dataframe from <forcastedPeriod> days ago
+#     # since we have the date in descending order we will select the first <forcastedPeriod> entries
+#     X_lately = X[-forcastedPeriod:]
+#     # select all rows from the dataframe from the past until <forcastedPeriod> days
+#     X = X[:-forcastedPeriod]
+
+#     df.dropna(inplace=True)
+#     y = np.array(df['label'])
+
+#     X_train, X_test, y_train, y_test = model_selection.train_test_split(
+#         X, y, test_size=0.2)
+
+#     return df, X_train, X_test, y_train, y_test, X_lately
