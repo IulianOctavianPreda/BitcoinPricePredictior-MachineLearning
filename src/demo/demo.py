@@ -19,6 +19,11 @@ class Demo:
         scaler = Scaler(ScalerType.StandardScaler, dataset.getFeatureData())
         predictionDataset = Dataset(pathToPredictionDataset, features, label)
 
+        print(dataset.head())
+        print(dataset.shape())
+        print(predictionDataset.head())
+        print(predictionDataset.shape())
+
         scores = {}
 
         for types in ModelType:
