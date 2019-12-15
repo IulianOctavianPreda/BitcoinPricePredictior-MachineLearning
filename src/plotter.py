@@ -1,6 +1,6 @@
 from matplotlib import pyplot
 from pandas import DataFrame
-from pandas.plotting import scatter_matrix
+from pandas.plotting import scatter_matrix, register_matplotlib_converters
 from matplotlib import style
 style.use('ggplot')
 
@@ -10,6 +10,7 @@ class Plotter:
 
     def __init__(self, dataset: DataFrame):
         self._dataset = dataset
+        register_matplotlib_converters()
 
     def boxPlot(self):
         self._dataset.plot(kind='box', vert=True)
