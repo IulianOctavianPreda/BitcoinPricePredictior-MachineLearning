@@ -9,6 +9,7 @@ class ScalerHelper:
 
     @staticmethod
     def getScaler(scalerType: ScalerType):
+        """Returns the scaler based on the selected type"""
         _scalers = {
             ScalerType.StandardScaler: preprocessing.StandardScaler(),
             scalerType.MinMaxScaler: preprocessing.MinMaxScaler()

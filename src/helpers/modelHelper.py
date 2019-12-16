@@ -11,6 +11,7 @@ import joblib
 class ModelHelper:
     @staticmethod
     def getTrainingModel(modelType: ModelType):
+        """Returns the training model based on the selected type"""
         _models = {
             ModelType.LinearRegression: LinearRegression(n_jobs=-1),
             ModelType.BayesianRidge: BayesianRidge(),

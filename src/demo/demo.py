@@ -14,6 +14,7 @@ class Demo:
              features: str = "['Open',  'High',  'Low',  'Close', 'Volume', 'Market Cap']",
              label: str = "Close",
              indexColumn: str = "Date"):
+        """Static method that will test all the predictions algorithms"""
         dataset = Dataset(pathToDataset, features, label)
         dataset.truncateDataset()
         scaler = Scaler(ScalerType.StandardScaler, dataset.getFeatureData())
